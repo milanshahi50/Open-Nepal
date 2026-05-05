@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OpenNepal - Earn & Store</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <style>
+        :root { --primary: #6c5ce7; --secondary: #00b894; --danger: #ff7675; --dark: #2d3436; --bg: #f4f7f6; --vip: #f1c40f; --organic: #2ecc71; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; overflow-x: hidden; padding-bottom: 80px; }
+        #authWrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        #authBox { width: 100%; max-width: 400px; text-align: center; }
+        .logo-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary); }
+        .nav { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 5%; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #eee; }
+        .nav-left { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+        .logout-btn { color: var(--danger); font-size: 11px; cursor: pointer; border: 1px solid var(--danger); padding: 2px 6px; border-radius: 5px; }
+        .coin-display { font-weight: bold; color: var(--secondary); font-size: 16px; }
+        .container { width: 92%; max-width: 500px; margin: 15px auto; }
+        .box { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .store-box { background: transparent; box-shadow: none; padding: 0; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px; }
+        .btn-full { grid-column: span 2; }
+        button { padding: 12px; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; width: 100%; transition: 0.2s; margin-bottom: 12px; }
+        .ref-btn { background: #8e84f3; color: white; } 
+        .buy-btn { background: #f3be4d; color: white; } 
+        .vip-btn { background: var(--vip); color: #2d3436; } 
+        .add-v-btn { background: #ebf5ff; color: #0984e3; } 
+        .add-c-btn { background: #fff4e6; color: #e67e22; } 
+        .sub-toggle-btn { background: #fff0f0; color: #d63031; } 
+        .withdraw-btn { background: #f1f2f6; color: #2f3542; border: 1px solid #dfe4ea; } 
+        .history-btn { background: #dfe6e9; color: #2d3436; } 
+        .organic-filter-btn { background: var(--organic); color: white; margin-bottom: 15px; border-radius: 15px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid #27ae60; }
+        .video-card { background: white; margin-bottom: 30px; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08); position: relative; }
+        .video-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+        .uploader-tag { position: absolute; bottom: 5px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; z-index: 10; }
+        .vip-video-badge { position: absolute; top: 10px; left: 10px; background: var(--vip); color: #000; font-size: 10px; padding: 3px 8px; border-radius: 5px; font-weight: bold; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px; border: 1.5px solid #eee; border-radius: 12px; box-sizing: border-box; display: block; }
+        .search-input { margin-bottom: 20px; background: white; border: 1px solid #ddd; }
+        .hidden { display: none !important; }
+        #customAlert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 10px 20px; border-radius: 30px; z-index: 10000; display: none; font-size: 12px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #eee; z-index: 2000; }
+        .nav-item { text-align: center; color: #666; font-size: 10px; flex: 1; cursor: pointer; position: relative; }
+        .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+        #cartBadge { position: absolute; top: -5px; right: 20%; background: var(--danger); color: white; font-size: 9px; padding: 2px 5px; border-radius: 50%; }
+        .product-card { background:#fff; border-radius:15px; border:1.1px solid #eee; overflow:hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
+        .product-img { width:100%; height:110px; object-fit:cover; }
+        .product-info { padding:10px; }
+        .btn-container { display: flex; gap: 6px; margin-top: 10px; }
+        .btn-basket { background: var(--primary); color: white; padding: 8px 2px; font-size: 10px; flex: 1; margin-bottom: 0; }
+        .btn-buy-now { background: var(--secondary); color: white; padding: 8px 2px; font-size: 10px; flex: 1; margin-bottom: 0; }
+        .vip-list-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f1f1f1; font-size: 13px; }
+        .vip-badge { background: var(--vip); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
+        .discount-tag { position: absolute; top: 5px; left: 5px; background: var(--danger); color: white; font-size: 9px; padding: 2px 6px; border-radius: 5px; font-weight: bold; }
+        .history-item { padding:10px; border-bottom:1px solid #eee; font-size:12px; margin-bottom:8px; border-radius:10px; border-left: 5px solid #ccc; background:#fff; }
+    </style>
+</head>
+<body>
+<div id="customAlert"></div>
+<div id="authWrapper">
+    <div id="authBox">
+        <img src="https://drive.google.com/thumbnail?id=1EKMCogp2dPldecMhtD86RgTr0vvLeEut&sz=w500" class="logo-img">
+        <h2 style="color: var(--primary);">Open Nepal</h2>
+        <div id="loginSection">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button style="background:var(--secondary); color:white;" onclick="login()">Login</button>
+            <button onclick="showSignup()" style="background:none; color: var(--primary); margin-top: -5px;">Register New Account</button>
+        </div>
+        <div id="signupFields" class="hidden">
+            <input type="text" id="signupName" placeholder="Full Name">
+            <input type="email" id="signupEmail" placeholder="Email">
+            <input type="password" id="signupPassword" placeholder="Password (Min 6 chars)">
+            <input type="text" id="signupRef" placeholder="Refer Code (Optional)">
+            <button style="background:var(--primary); color:white;" onclick="signup()">Create Account</button>
+            <button onclick="showSignup()" style="background:none; margin-top: -5px;">Back to Login</button>
+        </div>
+    </div>
+</div>
+
+<div id="home" class="hidden">
+    <div class="nav">
+        <div class="nav-left">👤 <span id="username">...</span> <span class="logout-btn" onclick="logout()">Logout</span></div>
+        <div class="coin-display">💰 <span id="coins">0</span></div>
+    </div>
+    <div class="container">
+        <div id="mainContent">
+            <div class="box">
+                <div class="action-grid">
+                    <button class="ref-btn" onclick="toggleSec('referSection')">🎁 Refer & Earn</button>
+                    <button class="buy-btn" onclick="toggleSec('buyCoinSection')">🪙 Buy Coin</button>
+                    <button class="vip-btn btn-full" onclick="toggleSec('vipSection')">⭐ VIP Members List</button>
+                    <button class="add-v-btn" onclick="toggleSec('videoBox')">➕ Add Video</button>
+                    <button class="add-c-btn" onclick="toggleSec('channelBox')">➕ Add Channel</button>
+                    <button class="sub-toggle-btn btn-full" onclick="toggleSec('subscribeSection')">📺 Subscribe & Earn</button>
+                    <button class="withdraw-btn" onclick="toggleSec('withdrawSection')">💳 Withdraw</button>
+                    <button class="history-btn" onclick="toggleSec('historySection')">📜 History</button>
+                </div>
+                <div id="vipSection" class="hidden"><h4 style="margin:0; color:var(--vip);">👑 VIP Members</h4><div id="vipList">Loading...</div></div>
+                <div id="referSection" class="hidden" style="text-align:center;"><small>Your Code:</small><h3 id="refCodeDisplay" style="margin:10px 0;">...</h3><button onclick="copyRef()">Copy Code</button></div>
+                <div id="buyCoinSection" class="hidden"><input type="number" id="buyAmount" placeholder="Coin Amount"><button style="background:var(--secondary); color:white;" onclick="requestBuyCoins()">Submit</button></div>
+                <div id="withdrawSection" class="hidden"><input type="number" id="withdrawPhone" placeholder="Phone Number"><input type="number" id="withdrawAmount" placeholder="Min 10,000"><button onclick="requestWithdraw()" style="background:var(--primary); color:white;">Request</button></div>
+                <div id="subscribeSection" class="hidden"><h4>Channels:</h4><div id="channelList"></div></div>
+                <div id="videoBox" class="hidden"><input type="text" id="videoUrlInput" placeholder="YouTube Link"><input type="text" id="videoChNameInput" placeholder="Channel Name"><button onclick="addVideo()">Submit (100C)</button></div>
+                <div id="channelBox" class="hidden"><input type="text" id="chName" placeholder="Name"><input type="text" id="chUrl" placeholder="Link"><button onclick="addChannel()">Submit (200C)</button></div>
+                <div id="historySection" class="hidden"><h4>History:</h4><div id="historyList"></div></div>
+            </div>
+            <div id="videoSection">
+                <h4 style="margin-bottom:10px;">Watch Videos ↓</h4>
+                <input type="text" id="videoSearch" class="search-input" placeholder="🔍 Search Channel..." onkeyup="loadFeed()">
+                <div id="videoFeed"></div>
+            </div>
+        </div>
+        <div id="storeSection" class="hidden box store-box">
+            <div id="storeView">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0;">🛒 OpenNepal - Store</h3>
+                    <button onclick="toggleCart()" style="width:auto; padding:5px 12px; background:#fff; border:1px solid #ddd; border-radius:10px;">🧺 Basket (<span id="basketCount">0</span>)</button>
+                </div>
+                <button class="organic-filter-btn" onclick="filterOrganic()">🌾 (Organic products) </button>
+                <div id="vipPromo" class="hidden" style="background: #fff9db; padding: 8px; border-radius:10px; font-size:11px; margin-bottom:10px; color:#856404; border:1px solid #ffeeba;">✨ VIP Members - विशेष छुट लागू।</div>
+                <input type="text" id="productSearch" class="search-input" placeholder="🔍 Search products..." onkeyup="filterProducts()">
+                <div id="productGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
+            </div>
+            <div id="checkoutForm" class="hidden">
+                <button onclick="backToStore()" style="width:auto; padding:5px 15px; background:#fff; margin-bottom:15px; border-radius:10px;">← Back</button>
+                <div style="background:#fff; padding:15px; border-radius:15px; border:1px solid #eee;">
+                    <h3 id="orderSummaryHeader" style="margin:0;">Checkout</h3>
+                    <input type="text" id="manualProductName" placeholder="Product Name">
+                    <div style="display:flex; gap:8px;"><input type="text" id="manualColor" placeholder="Color"><input type="text" id="manualSize" placeholder="Size"></div>
+                    <input type="text" id="orderName" placeholder="Full Name"><input type="text" id="orderAddress" placeholder="Address"><input type="number" id="orderPhone" placeholder="Phone Number">
+                    <button style="background:var(--secondary); color:white;" onclick="placeOrder()">Confirm Order</button>
+                </div>
+            </div>
+        </div>
+        <div id="aboutSection" class="hidden box">
+            <h3>Open Nepal Earn & Grow</h3>
+            
+<p>Open Nepal Earn & Grow एक all-in-one digital platform हो जहाँ प्रयोगकर्ताले <b>earn, promote र shopping</b> सबै काम सजिलै गर्न सक्छन्।</p>
+
+<p>यहाँ प्रयोगकर्ताहरूले video हेरेर, subscribe गरेर, refer गरेर coins earn गर्न सक्छन्। साथै, प्रयोगकर्ताले आफ्नै <b>channel र video promote (prompt)</b> गर्न पनि सक्छन्।</p>
+
+<p>Channel वा video promote गर्दा प्रयोगकर्ताको <b>coins deduct (कट) हुन्छ</b>, जसले गर्दा content बढी मानिससम्म पुग्छ र राम्रो reach प्राप्त हुन्छ।</p>
+
+<p>प्रयोगकर्ताले सजिलै आफ्नो channel add गर्न, video upload गर्न र आफ्नो content लाई अरू मानिसहरूसम्म पुर्‍याउन सक्छन्। यसले content creators लाई grow हुन र audience बढाउन सहयोग गर्छ।</p>
+
+<p>हाम्रो platform ले earning र promotion दुबैलाई एउटै ठाउँमा जोडेर <b>simple, secure र transparent system</b> प्रदान गर्छ।</p>
+
+<p>👉 Earn. Promote. Shop – with Open Nepal Earn & Grow.</p>
+            <button onclick="showHome()" style="background:var(--primary); color:white;">Back</button>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="showHome()"><span class="nav-icon">🏠</span>Home</div>
+        <div class="nav-item" onclick="openStore()"><span class="nav-icon">🛒</span>Store<span id="cartBadge">0</span></div>
+        <a href="tel:+9779843731462" class="nav-item" style="text-decoration:none; color:inherit;"><span class="nav-icon">📞</span>Call</a>
+        <a href="https://wa.me/60142482539" class="nav-item" style="text-decoration:none; color:inherit;"><span class="nav-icon">💬</span>Contact</a>
+        <div class="nav-item" onclick="showAbout()"><span class="nav-icon">ℹ&nbsp;</span>About</div>
+    </div>
+</div>
+<div id="cartModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; width:85%; border-radius:20px; padding:20px; max-height:70vh; overflow-y:auto;">
+        <h3>My Basket</h3><div id="cartItemsList"></div><hr>
+        <b>Total: Rs. <span id="cartTotal">0</span></b>
+        <button style="background:var(--secondary); color:white; margin-top:15px;" onclick="goToCheckout()">Checkout</button>
+        <button onclick="toggleCart()" style="background:#eee; margin-top:5px;">Close</button>
+    </div>
+</div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDnuw-707NQ1LKEX1X4uEDVLL5yveobu-Y",
+        authDomain: "open-nepal-earn-to-grow.firebaseapp.com",
+        databaseURL: "https://open-nepal-earn-to-grow-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "open-nepal-earn-to-grow",
+        storageBucket: "open-nepal-earn-to-grow.firebasestorage.app",
+        messagingSenderId: "235834177721",
+        appId: "1:235834177721:web:d60973b061a1bb94cf4368"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.database();
+    
+    // global variables
+    let currentUid = null, currentName = "", currentCoins = 0, cart = [], players = {}, activeIntervals = {}, checkoutData = null, allProducts = [], hasLoadedFeed = false, isVIP = false;
+    let historyLimit = 20; // सुरुमा २० वटा मात्र देखाउन
+
+    function myAlert(m) { let b = document.getElementById('customAlert'); b.innerText = m; b.style.display = 'block'; setTimeout(()=>b.style.display='none', 3000); }
+    function showSignup() { document.getElementById('loginSection').classList.toggle('hidden'); document.getElementById('signupFields').classList.toggle('hidden'); }
+    function toggleSec(id) { const ids = ['referSection','videoBox','channelBox','subscribeSection','withdrawSection','buyCoinSection', 'historySection', 'vipSection']; const target = document.getElementById(id); const isHidden = target.classList.contains('hidden'); ids.forEach(i => document.getElementById(i).classList.add('hidden')); if(isHidden) target.classList.remove('hidden'); if(id === 'subscribeSection') loadChannels(); if(id === 'historySection') { historyLimit = 20; loadHistory(); } if(id === 'vipSection') loadVIPs(); }
+
+    auth.onAuthStateChanged(u => {
+        if(u) {
+            currentUid = u.uid;
+            db.ref('users/'+u.uid).on('value', s => {
+                if(s.val()) {
+                    let d = s.val(); currentName = d.name; currentCoins = d.coins;
+                    isVIP = d.isVIP === true || d.isVIP === "true"; 
+                    document.getElementById('username').innerText = currentName; 
+                    document.getElementById('coins').innerText = currentCoins;
+                    document.getElementById('refCodeDisplay').innerText = d.refCode;
+                    document.getElementById('authWrapper').classList.add('hidden'); 
+                    document.getElementById('home').classList.remove('hidden');
+                    if(isVIP) document.getElementById('vipPromo').classList.remove('hidden'); else document.getElementById('vipPromo').classList.add('hidden');
+                    if(!hasLoadedFeed) { loadFeed(); hasLoadedFeed = true; }
+                }
+            });
+        }
+    });
+
+    function loadFeed() {
+        const query = document.getElementById('videoSearch').value.toLowerCase().trim();
+        db.ref('videos').once('value', snap => {
+            let vids = []; snap.forEach(v => {
+                let d = v.val(); let id = extractId(d.url || d);
+                if(id) {
+                    let chName = d.channelName ? d.channelName.toLowerCase() : "";
+                    if(!query || chName.includes(query)) vids.push({ id, channelName: d.channelName || "Unknown", isVIPVideo: d.isVIPVideo || false });
+                }
+            });
+            vids.sort((a,b) => (a.isVIPVideo === b.isVIPVideo) ? 0 : a.isVIPVideo ? -1 : 1);
+            const feed = document.getElementById('videoFeed'); feed.innerHTML = "";
+            vids.forEach(v => {
+                let card = document.createElement('div'); card.className = 'video-card';
+                if(v.isVIPVideo) card.style.border = "2px solid var(--vip)";
+                card.innerHTML = `${v.isVIPVideo ? '<div class="vip-video-badge">⭐ Top VIP</div>' : ''}<div class="video-container"><div id="player_${v.id}"></div></div><div class="uploader-tag">Channel: ${v.channelName}</div>`;
+                feed.appendChild(card);
+                players[v.id] = new YT.Player(`player_${v.id}`, { height: '100%', width: '100%', videoId: v.id, events: { 'onStateChange': (e) => onPlayerStateChange(e, v.id) } });
+            });
+        });
+    }
+
+    // यहाँ छ History को नयाँ Color र Load More लजिक
+    function loadHistory() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = "";
+
+        // Withdrawal History
+        db.ref('withdrawals').orderByChild('uid').equalTo(currentUid).limitToLast(historyLimit).once('value', snap => {
+            let h = "<h5>Withdrawals (Recent):</h5>";
+            let items = [];
+            snap.forEach(w => { items.push(w.val()); });
+            items.reverse(); 
+
+            items.forEach(val => {
+                let s = val.status || "Pending";
+                let c = s === "Approved" ? "#2ecc71" : (s === "Rejected" ? "#ff7675" : "#f1c40f");
+                h += `<div class="history-item" style="border-left-color:${c}">💰 Withdraw: Rs.${val.coins/100} - <b style="color:${c}">${s}</b></div>`;
+            });
+            list.innerHTML += h;
+        });
+
+        // Store Orders History
+        db.ref('orders').orderByChild('uid').equalTo(currentUid).limitToLast(historyLimit).once('value', snap => {
+            let o = "<h5 style='margin-top:15px;'>Store Orders (Recent):</h5>";
+            let items = [];
+            snap.forEach(ord => { items.push(ord.val()); });
+            items.reverse(); 
+
+            items.forEach(d => {
+                let s = d.status || "Pending";
+                let c = (s === "Delivered" || s === "Approved") ? "#2ecc71" : (s === "Cancelled" || s === "Rejected" ? "#ff7675" : "#f1c40f");
+                o += `<div class="history-item" style="border-left-color:${c}">📦 <b>${d.items}</b><br>Total: Rs.${d.total} - <b style="color:${c}">${s}</b></div>`;
+            });
+            
+            o += `<button id="loadMoreBtn" onclick="loadMoreHistory()" style="background:#eee; color:#333; margin-top:10px; font-size:11px; border:1px solid #ddd;">Load More...</button>`;
+            list.innerHTML += o;
+        });
+    }
+
+    function loadMoreHistory() {
+        historyLimit += 20;
+        loadHistory();
+    }
+
+    function onPlayerStateChange(e, id) { if(e.data == YT.PlayerState.PLAYING) { if(!activeIntervals[id]) activeIntervals[id] = setInterval(() => { db.ref('users/'+currentUid+'/coins').transaction(c => (c||0)+1); }, 1000); } else { clearInterval(activeIntervals[id]); delete activeIntervals[id]; } }
+    function loadProducts() { db.ref('products').on('value', snap => { allProducts = []; snap.forEach(c => { allProducts.push({id: c.key, ...c.val()}); }); displayProducts(allProducts); }); }
+    function displayProducts(products) { 
+        const grid = document.getElementById('productGrid'); grid.innerHTML = ""; 
+        products.forEach(p => { 
+            let price = Number(p.price) || 0, discP = Number(p.vipDiscount) || 0;
+            let finalPrice = (isVIP && discP > 0) ? Math.floor(price * (1 - discP/100)) : price;
+            let discTag = (isVIP && discP > 0) ? `<div class="discount-tag">${discP}% OFF</div>` : "";
+            grid.innerHTML += `<div class="product-card">${discTag}<img src="${p.img || ''}" class="product-img"><div class="product-info"><small>${p.name}</small><br><b style="color:var(--secondary);">Rs.${finalPrice}</b><div class="btn-container"><button class="btn-basket" onclick="addToCart('${p.id}','${p.name}',${finalPrice})">Add</button><button class="btn-buy-now" onclick="directBuy('${p.name}',${finalPrice})">Buy</button></div></div></div>`; 
+        }); 
+    }
+    function filterOrganic() { const org = allProducts.filter(p => p.category === "Organic"); if(org.length === 0) return myAlert("अहिले उपलब्ध छैन!"); displayProducts(org); }
+    function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value).catch(() => myAlert("Failed!")); }
+    function logout() { auth.signOut().then(() => location.reload()); }
+    function extractId(u) { let r = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/; let m = String(u).match(r); return (m&&m[2].length==11)?m[2]:null; }
+    function showHome() { document.getElementById('mainContent').classList.remove('hidden'); document.getElementById('storeSection').classList.add('hidden'); document.getElementById('aboutSection').classList.add('hidden'); }
+    function openStore() { document.getElementById('mainContent').classList.add('hidden'); document.getElementById('aboutSection').classList.add('hidden'); document.getElementById('storeSection').classList.remove('hidden'); loadProducts(); }
+    function showAbout() { document.getElementById('mainContent').classList.add('hidden'); document.getElementById('storeSection').classList.add('hidden'); document.getElementById('aboutSection').classList.remove('hidden'); }
+    function toggleCart() { document.getElementById('cartModal').classList.toggle('hidden'); }
+    function addToCart(id, name, price) { let f = cart.find(i => i.id === id); if(f) f.qty++; else cart.push({id, name, price, qty: 1}); updateCartUI(); myAlert("Added!"); }
+    function updateCartUI() { let count = cart.reduce((s,i)=>s+i.qty, 0); document.getElementById('cartBadge').innerText = count; document.getElementById('basketCount').innerText = count; let list = document.getElementById('cartItemsList'), total = 0; list.innerHTML = ""; cart.forEach(i => { total += (i.price * i.qty); list.innerHTML += `<div style="display:flex; justify-content:space-between; font-size:12px;"><span>${i.name} x${i.qty}</span><span>Rs.${i.price*i.qty}</span></div>`; }); document.getElementById('cartTotal').innerText = total; }
+    function directBuy(name, price) { checkoutData = { items: [{name, price, qty: 1}], total: price }; showCheckout(); }
+    function goToCheckout() { if(cart.length === 0) return myAlert("Empty!"); checkoutData = { items: cart, total: document.getElementById('cartTotal').innerText }; toggleCart(); showCheckout(); }
+    function showCheckout() { document.getElementById('storeView').classList.add('hidden'); document.getElementById('checkoutForm').classList.remove('hidden'); document.getElementById('manualProductName').value = checkoutData.items.map(i=>i.name).join(", "); }
+    function backToStore() { document.getElementById('storeView').classList.remove('hidden'); document.getElementById('checkoutForm').classList.add('hidden'); }
+    function placeOrder() { let n = document.getElementById('orderName').value, a = document.getElementById('orderAddress').value, p = document.getElementById('orderPhone').value; if(!n || !a || !p) return myAlert("Fill all!"); db.ref('orders').push({ uid: currentUid, customer: n, address: a, phone: p, items: document.getElementById('manualProductName').value, total: checkoutData.total, status: "Pending", time: Date.now() }).then(() => { myAlert("Order Placed!"); cart = []; updateCartUI(); backToStore(); }); }
+    function filterProducts() { let val = document.getElementById('productSearch').value.toLowerCase(); displayProducts(allProducts.filter(p => p.name.toLowerCase().includes(val))); }
+    function addVideo() { let url = document.getElementById('videoUrlInput').value, ch = document.getElementById('videoChNameInput').value; if(!url || !ch || currentCoins < 100) return myAlert("Invalid!"); db.ref('users/'+currentUid+'/coins').transaction(c => (c||0)-100).then(() => { db.ref('videos').push({ url, channelName: ch, uid: currentUid }); loadFeed(); }); }
+    function requestBuyCoins() { let a = document.getElementById('buyAmount').value; if(a < 100) return myAlert("Min 100!"); db.ref('purchase_requests').push({ uid: currentUid, amount: parseInt(a), status: 'pending', time: Date.now() }); }
+    function requestWithdraw() { let a = document.getElementById('withdrawAmount').value; if(a < 10000 || currentCoins < a) return myAlert("Insufficient!"); db.ref('users/'+currentUid+'/coins').transaction(c => (c||0)-a).then(() => { db.ref('withdrawals').push({ uid: currentUid, coins: parseInt(a), status: 'Pending', time: Date.now() }); }); }
+    function loadChannels() { const list = document.getElementById('channelList'); db.ref('channels').once('value', snap => { list.innerHTML = ""; snap.forEach(c => { list.innerHTML += `<div style="background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span><b>${c.val().name}</b></span><button onclick="window.open('${c.val().url}', '_blank'); db.ref('users/'+currentUid+'/coins').transaction(c => (c||0)+100); myAlert('Subbed!')" style="width:auto; padding:5px 12px; background:var(--danger); color:white; margin-bottom:0;">Sub</button></div>`; }); }); }
+    function loadVIPs() { const vList = document.getElementById('vipList'); db.ref('users').once('value', snap => { vList.innerHTML = ""; snap.forEach(v => { let u = v.val(); if(u.isVIP) vList.innerHTML += `<div class="vip-list-item"><span>👤 ${u.name}</span><span class="vip-badge">VIP</span></div>`; }); }); }
+    function copyRef() { navigator.clipboard.writeText(document.getElementById('refCodeDisplay').innerText); myAlert("Copied!"); }
+    function addChannel() { let n = document.getElementById('chName').value, u = document.getElementById('chUrl').value; if(!n || !u || currentCoins < 200) return myAlert("Invalid!"); db.ref('users/'+currentUid+'/coins').transaction(c => (c||0)-200).then(() => { db.ref('channels').push({ name: n, url: u, uid: currentUid }); }); }
+    function signup() {
+        let n = document.getElementById('signupName').value, e = document.getElementById('signupEmail').value, p = document.getElementById('signupPassword').value;
+        if(!n || !e || p.length < 6) return myAlert("Check details!");
+        auth.createUserWithEmailAndPassword(e, p).then(res => {
+            db.ref('users/' + res.user.uid).set({ name: n, coins: 100, refCode: res.user.uid.slice(0,6).toUpperCase(), isVIP: false }).then(() => location.reload());
+        }).catch(err => myAlert(err.message));
+    }
+</script>
+</body>
+</html>
